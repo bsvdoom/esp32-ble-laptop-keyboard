@@ -1,0 +1,12 @@
+[submodule "lib/ArduinoJson"]
+	path = lib/ArduinoJson
+	url = https://github.com/bblanchon/ArduinoJson
+[submodule "lib/CD74HC4067"]
+	path = lib/CD74HC4067
+	url = https://github.com/waspinator/CD74HC4067.git
+[submodule "lib/ElegantOTA"]
+	path = lib/ElegantOTA
+	url = https://github.com/ayushsharma82/ElegantOTA.git
+[submodule "lib/ESP32-BleKeyboard-HUN"]
+	path = lib/ESP32-BleKeyboard-HUN
+	url = https://github.com/bsvdoom/ESP32-BLE-Keyboard-HUN

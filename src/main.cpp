@@ -18,19 +18,19 @@ CD74HC4067 muxCol(4, 3, 2, 1);
 uint8_t pinRows[PINS_ROW] = { 128, 129, 130, 131, 132, 133, 134, 135 };
 uint8_t pinCols[PINS_COL] = { 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 18, 19 };
 
-uint16_t delayMicrosInRead = 50;
-uint16_t delayMicrosInWrite = 50;
+uint16_t delayMicrosInRead = 20;
+uint16_t delayMicrosInWrite = 20;
 
 bool keyStatusMatrix[PINS_ROW][PINS_COL] = {};
 
 #include <BleKeyboardHUN.h>
 
 const uint8_t keyMatrix[PINS_ROW][PINS_COL] = {
-/*0*/ { 0, 0, KEY_RIGHT_ARROW, KEY_U_UMLAUT, '-', 'p', KEY_INSERT, 'j', 0, KEY_RIGHT_CTRL, 0, 'q', 0, '3', 't', 'u', '1', 0 },
+/*0*/ { 0, 0, KEY_RIGHT_ARROW, KEY_U_ACUTE, KEY_U_UMLAUT, 'p', KEY_INSERT, 'j', 0, KEY_RIGHT_CTRL, 0, 'q', 0, '3', 't', 'u', '1', 0 },
 /*1*/ { 0, KEY_DELETE, KEY_DOWN_ARROW, KEY_LEFT_ARROW, 0, KEY_A_ACUTE, KEY_RIGHT_GUI, ' ', 0, 0, 0, 'z', KEY_RIGHT_ALT, 0, 0, 'b', 0, 0 },
 /*2*/ { KEY_PAGE_DOWN, 0, KEY_E_ACUTE, KEY_HOME, 0x2D, '.', 0, ',', 0, 0, 0, 'x', KEY_LEFT_ALT, 'c', 0, 'n', 'a', 0 },
 /*3*/ { 0, KEY_PAGE_UP, KEY_U_DOUBLE_ACUTE, KEY_UP_ARROW, 0, 0, 0, 'm', KEY_RIGHT_SHIFT, 0, 0, 's', 0, 'd', 'g', 'h', KEY_CAPS_LOCK, 0 },
-/*4*/ { 0, 0, KEY_RETURN, KEY_I_ACUTE, KEY_O_DOUBLE_ACUTE, 'l', 0, 'k', 0, 0, KEY_LEFT_GUI, 'w', 0, 'e', 'r', 'y', KEY_TAB, 0 },
+/*4*/ { 0, 0, KEY_RETURN, KEY_I_ACUTE+2, KEY_O_DOUBLE_ACUTE, 'l', 0, 'k', 0, 0, KEY_LEFT_GUI, 'w', 0, 'e', 'r', 'y', KEY_TAB, 0 },
 /*5*/ { 0, 0, KEY_BACKSPACE, KEY_O_ACUTE, KEY_O_UMLAUT, 'o', 0, 'i', 0, KEY_LEFT_CTRL, 0, '2', 0, 0, '5', '7', '0', 0 },
 /*6*/ { 0, 0, /*KEY_PAUSE*/ 0, KEY_PRTSC, KEY_F12, '9', 0, KEY_F8, KEY_LEFT_SHIFT, 0, 0, KEY_F2, 0, KEY_F4, '6', '8', KEY_F1, 0 }, //17
 /*7*/ { 0, 0, KEY_END, 0, KEY_F11, KEY_F10, 0, KEY_F9, 0, 0, 0, KEY_F3, 0, KEY_F5, KEY_F6, KEY_F7, KEY_ESC, 0 }//17
@@ -59,7 +59,7 @@ const uint8_t keyMatrix[PINS_ROW][PINS_COL] = {
   //BleKeyboardHUN bleKeyboard;
 #endif
 
-
+uint8_t auth_option = ESP_BLE_ONLY_ACCEPT_SPECIFIED_AUTH_ENABLE;
 //====================================================================================================
 
 void readCols(uint8_t channelRow) {

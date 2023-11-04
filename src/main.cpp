@@ -37,17 +37,24 @@ const uint8_t keyMatrix[PINS_ROW][PINS_COL] = {
 #include "secret.h"
 
 #ifdef OTA
+  #if defined(ESP8266)
+  #include <ESP8266WiFi.h>
+  #include <ESPAsyncTCP.h>
+#elif defined(ESP32)
   #include <WiFi.h>
-  #include <WiFiClient.h>
-  #include <WebServer.h>
-  #include <ElegantOTA.h>
+  #include <AsyncTCP.h>
+#endif
 
-  const char* ota_ssid = OTA_SSID;
-  const char* ota_password = OTA_PASSWORD;
+#include <ESPAsyncWebServer.h>
+#include <ElegantOTA.h>
 
-  WebServer server(80);
+const char* ssid = OTA_SSID;
+const char* password = OTA_PASSWORD;
 
-  unsigned long ota_progress_millis = 0;
+AsyncWebServer server(80);
+
+unsigned long ota_progress_millis = 0;
+
 
 #endif
 
@@ -137,27 +144,21 @@ void pinSetup() {
 }
 
 //====================================================================================================
-
 void onOTAStart() {
-  #ifdef OTA
   // Log when OTA has started
   Serial.println("OTA update started!");
   // <Add your own code here>
-  #endif
 }
 
 void onOTAProgress(size_t current, size_t final) {
-  #ifdef OTA
   // Log every 1 second
   if (millis() - ota_progress_millis > 1000) {
     ota_progress_millis = millis();
     Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
   }
-  #endif
 }
 
 void onOTAEnd(bool success) {
-  #ifdef OTA
   // Log when OTA has finished
   if (success) {
     Serial.println("OTA update finished successfully!");
@@ -165,13 +166,13 @@ void onOTAEnd(bool success) {
     Serial.println("There was an error during OTA update!");
   }
   // <Add your own code here>
-  #endif
 }
+
 
 void wifiConnect() {
   #ifdef OTA
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ota_ssid, ota_password);
+  WiFi.begin(ssid, password);
   Serial.println("");
 
   // Wait for connection
@@ -181,12 +182,12 @@ void wifiConnect() {
   }
   Serial.println("");
   Serial.print("Connected to ");
-  Serial.println(ota_ssid);
+  Serial.println(ssid);
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  server.on("/", []() {
-    server.send(200, "text/plain", "Hi! This is ElegantOTA Demo.");
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Hi! This is ElegantOTA AsyncDemo.");
   });
 
   ElegantOTA.begin(&server);    // Start ElegantOTA
@@ -229,7 +230,6 @@ void setup() {
 void loop() {
   #ifdef OTA
   if(digitalRead(OTA_PIN)) {
-    server.handleClient();
     ElegantOTA.loop();
     return;
   }
@@ -244,6 +244,6 @@ void loop() {
   }
 #else
   writeRows();
-  delay(1000);
+  // delay(1000);
 #endif 
 }

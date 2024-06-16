@@ -20,21 +20,25 @@ uint16_t delayMicrosInWrite = 20;
 bool keyStatusMatrix[PINS_ROW][PINS_COL] = {};
 
 
-#include <BleKeyboardHUN.h>
+//====================================================================================================
+#include "secret.h"
+
+
+// #ifdef BLE
+  #include <BleKeyboard.h>
+// #endif
 
 const uint8_t keyMatrix[PINS_ROW][PINS_COL] = {
 /*0*/ { 0, 0, KEY_RIGHT_ARROW, KEY_U_ACUTE, KEY_U_UMLAUT, 'p', KEY_INSERT, 'j', 0, KEY_RIGHT_CTRL, 0, 'q', 0, '3', 't', 'u', '1', 0 },
 /*1*/ { 0, KEY_DELETE, KEY_DOWN_ARROW, KEY_LEFT_ARROW, 0, KEY_A_ACUTE, KEY_RIGHT_GUI, ' ', 0, 0, 0, 'y', KEY_RIGHT_ALT, 0, 'v', 'b', 0, 0 },
 /*2*/ { KEY_PAGE_DOWN, 0, KEY_E_ACUTE, KEY_HOME, 0x2D, '.', 0, ',', 0, 0, 0, 'x', KEY_LEFT_ALT, 'c', 'f', 'n', 'a', 0 },
 /*3*/ { 0, KEY_PAGE_UP, KEY_U_DOUBLE_ACUTE, KEY_UP_ARROW, 0, 0, 0, 'm', KEY_RIGHT_SHIFT, 0, 0, 's', 0, 'd', 'g', 'h', KEY_CAPS_LOCK, 0 },
-/*4*/ { 0, 0, KEY_RETURN, KEY_I_ACUTE-2, KEY_O_DOUBLE_ACUTE, 'l', 0, 'k', 0, 0, KEY_LEFT_GUI, 'w', 0, 'e', 'r', 'z', KEY_TAB, 0 },
+/*4*/ { 0, 0, KEY_RETURN, KEY_I_ACUTE, KEY_O_DOUBLE_ACUTE, 'l', 0, 'k', 0, 0, KEY_LEFT_GUI, 'w', 0, 'e', 'r', 'z', KEY_TAB, 0 },
 /*5*/ { 0, 0, KEY_BACKSPACE, KEY_O_ACUTE, KEY_O_UMLAUT, 'o', 0, 'i', 0, KEY_LEFT_CTRL, 0, '2', 0, '4', '5', '7', '0', 0 },
 /*6*/ { 0, 0, /*KEY_PAUSE*/ 0, KEY_PRTSC, KEY_F12, '9', 0, KEY_F8, KEY_LEFT_SHIFT, 0, 0, KEY_F2, 0, KEY_F4, '6', '8', KEY_F1, 0 }, //17
 /*7*/ { 0, 0, KEY_END, 0, KEY_F11, KEY_F10, 0, KEY_F9, 0, 0, 0, KEY_F3, 0, KEY_F5, KEY_F6, KEY_F7, KEY_ESC, 0 }//17
 };
 
-//====================================================================================================
-#include "secret.h"
 
 #ifdef OTA
   #if defined(ESP8266)
@@ -58,10 +62,9 @@ unsigned long ota_progress_millis = 0;
 
 #endif
 
-#ifdef BLE
+// #ifdef BLE
   BleKeyboard bleKeyboard;
-  //BleKeyboardHUN bleKeyboard;
-#endif
+// #endif
 
 //====================================================================================================
 
@@ -139,26 +142,31 @@ void pinSetup() {
   digitalWrite(mux_pin_row, HIGH);
   
   #ifdef OTA
-  pinMode(OTA_PIN, INPUT_PULLUP);  //one more col pin
+  pinMode(OTA_PIN, INPUT_PULLUP);  //ota pin
   #endif
 }
 
 //====================================================================================================
 void onOTAStart() {
+  #ifdef OTA
   // Log when OTA has started
   Serial.println("OTA update started!");
   // <Add your own code here>
+  #endif
 }
 
 void onOTAProgress(size_t current, size_t final) {
+  #ifdef OTA
   // Log every 1 second
   if (millis() - ota_progress_millis > 1000) {
     ota_progress_millis = millis();
     Serial.printf("OTA Progress Current: %u bytes, Final: %u bytes\n", current, final);
   }
+  #endif
 }
 
 void onOTAEnd(bool success) {
+  #ifdef OTA
   // Log when OTA has finished
   if (success) {
     Serial.println("OTA update finished successfully!");
@@ -166,6 +174,7 @@ void onOTAEnd(bool success) {
     Serial.println("There was an error during OTA update!");
   }
   // <Add your own code here>
+  #endif
 }
 
 
@@ -210,7 +219,9 @@ void setup() {
   delay(10);
   Serial.println("Starting!");
   delay(100);
+  Serial.println("Setting pins!");
   pinSetup();
+  Serial.println("Pins set!");
   delay(100);
   #ifdef OTA
   if(!digitalRead(OTA_PIN)) {
@@ -221,29 +232,35 @@ void setup() {
   }
   #endif
 
-  #ifdef BLE
+  // #ifdef BLE
     Serial.println("Starting BLE work!");
-    bleKeyboard.begin();
-  #endif
+  bleKeyboard.begin();
+  // #endif
+
+  Serial.println("Setpu done!");
 }
 
 void loop() {
+  // Serial.println("Loop!");
   #ifdef OTA
-  if(digitalRead(OTA_PIN)) {
+  if(!digitalRead(OTA_PIN)) {
     ElegantOTA.loop();
     return;
   }
   #endif
   
-#ifdef BLE
+  #ifdef BLE
   if (bleKeyboard.isConnected()) {
+  #endif
+    // Serial.println("meh1!");
     writeRows();
+    delay(10);
+    // Serial.println("meh2!");
+  #ifdef BLE
   } else {
     Serial.println("Waiting 5 seconds for BT connection...");
     delay(1000);
   }
-#else
-  writeRows();
-  // delay(1000);
-#endif 
+  #endif
+   
 }

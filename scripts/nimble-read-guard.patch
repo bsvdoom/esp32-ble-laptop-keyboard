@@ -1,0 +1,41 @@
+Project modification of NimBLE-Arduino 2.5.1, commit 5ae2c43f62c5a588a25c1de68f7d17b6f3b75adb.
+SPDX-License-Identifier: Apache-2.0
+Copyright (c) 2026 esp32-ble-laptop-keyboard contributors
+Both modified upstream files retain their original license/copyright headers.
+
+--- a/src/NimBLELocalValueAttribute.h
++++ b/src/NimBLELocalValueAttribute.h
+@@ -59,6 +59,10 @@
+      * @brief Get the properties of the attribute.
+      */
+     uint16_t getProperties() const { return m_properties; }
++
++    // Modified by esp32-ble-laptop-keyboard contributors (2026): optional ATT read guard.
++    using ReadGuard = int (*)(NimBLEConnInfo&, void*);
++    void setReadGuard(ReadGuard guard, void* arg) { m_readGuard = guard; m_readGuardArg = arg; }
+ 
+     /**
+      * @brief Set the value of the attribute value.
+@@ -138,6 +142,8 @@
+     void setProperties(uint16_t properties) { m_properties = properties; }
+ 
+     uint16_t m_properties{0};
++    ReadGuard m_readGuard{nullptr};
++    void* m_readGuardArg{nullptr};
+ };
+ 
+ #endif // CONFIG_BT_ENABLED && CONFIG_BT_NIMBLE_ROLE_PERIPHERAL
+--- a/src/NimBLEServer.cpp
++++ b/src/NimBLEServer.cpp
+@@ -733,6 +733,11 @@
+     switch (ctxt->op) {
+         case BLE_GATT_ACCESS_OP_READ_DSC:
+         case BLE_GATT_ACCESS_OP_READ_CHR: {
++            // Modified by esp32-ble-laptop-keyboard contributors (2026): optional ATT read guard.
++            if (pAtt->m_readGuard) {
++                int error = pAtt->m_readGuard(peerInfo, pAtt->m_readGuardArg);
++                if (error) return error;
++            }
+             // Don't call readEvent if the buffer len is 0 (this is a follow up to a previous read),
+             // or if this is an internal read (handle is NONE)
+             if (ctxt->om->om_len > 0 && connHandle != BLE_HS_CONN_HANDLE_NONE) {

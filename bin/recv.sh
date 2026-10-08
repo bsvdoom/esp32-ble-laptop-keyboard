@@ -1,13 +1,10 @@
 #!/bin/bash -ex
 
-PORT="/dev/ttyUSB1"
+PORT="${1:?Usage: recv.sh PORT [LOGFILE]}"
 SPEED="115200"
-SPEED="230400"
-#SPEED="250000"
-#SPEED="500000"
 
-LOGFILE="LOG_$(date +%y%m%d%H%M).BFL"
+LOGFILE="${2:-LOG_$(date +%y%m%d%H%M).BFL}"
 
-stty -F $PORT $SPEED
-cat < $PORT > $LOGFILE
+stty -F "$PORT" "$SPEED" raw -echo
+cat < "$PORT" > "$LOGFILE"
 

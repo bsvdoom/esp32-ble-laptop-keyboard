@@ -4,7 +4,8 @@ services:
   pio:
     image: pio
     build:
-      context: docker
+      context: .
+      dockerfile: docker/Dockerfile
     hostname: pio
     network_mode: "host"
     volumes:

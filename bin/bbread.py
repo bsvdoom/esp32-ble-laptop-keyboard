@@ -1,42 +1,41 @@
 #!/usr/bin/env python3
-import serial
+"""Raw 115200-baud capture plus UTC receive timestamps; does not upload firmware."""
+import argparse
 import signal
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
+import serial
 
-port = "/dev/ttyUSB1"
-#speed = 230400
-speed = 500000
 
-now = datetime.now() # current date and time
-filename = now.strftime("LOG_%y%m%d_%H%M%S.BFL")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("port", help="verified serial port, e.g. /dev/ttyUSB1 or COM3")
+    parser.add_argument("log", type=Path, help="raw log filename; .utc.txt sidecar is also saved")
+    args = parser.parse_args()
+    stop = False
 
-f = open(filename, "wb")
-print("File opened for write:", filename)
+    def interrupt(signum, frame):
+        nonlocal stop
+        stop = True
 
-ser = serial.Serial(
-    port=port,
-    baudrate=speed,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-    bytesize=serial.EIGHTBITS,
-    timeout=0.2
-)
-print("Serial opened for read:", port, speed)
+    signal.signal(signal.SIGINT, interrupt)
+    with serial.Serial(port=None, baudrate=115200, timeout=0.2) as connection:
+        # Set before open; board/driver-specific line glitches remain unverified.
+        connection.dtr = False
+        connection.rts = False
+        connection.port = args.port
+        with args.log.open("xb") as raw, Path(str(args.log) + ".utc.txt").open("x") as timed:
+            connection.open()
+            print("Capture:", args.port, "115200 ->", args.log, "(Ctrl+C stops)")
+            while not stop:
+                chunk = connection.read(256)
+                if not chunk:
+                    continue
+                raw.write(chunk)
+                timed.write(datetime.now(timezone.utc).isoformat() + " " + repr(chunk) + "\n")
+                raw.flush()
+                timed.flush()
 
-stopProcessing = False
 
-def handler(signum, frame):
-    global stopProcessing
-    stopProcessing = True
-    print("Exiting")
-
-signal.signal(signal.SIGINT, handler)
-print("Press CTRL^C to stop")
-
-while True:
-    if stopProcessing: break
-    x = ser.read()
-    f.write(x)
-
-ser.close()
-f.close()
+if __name__ == "__main__":
+    main()

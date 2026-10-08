@@ -40,3 +40,14 @@
 .pio/
 
 /src/secret.h
+
+# Private source/firmware snapshots and hardware dumps must stay local.
+/.local-snapshots/
+/hardware-backups/
+/private-backups/
+/artifacts/
+*.bin
+*.dump
+*.BFL.utc.txt
+__pycache__/
+*.pyc

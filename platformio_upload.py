@@ -1,3 +1,7 @@
+# HISTORICAL / INACTIVE: ElegantOTA HTTP uploader; not applicable to this BLE-only build.
+# Not listed in extra_scripts. Do not enable the legacy instructions below.
+# Kept for provenance; importing it can install packages and replace the upload command.
+
 # Allows PlatformIO to upload directly to ElegantOTA
 #
 # To use:

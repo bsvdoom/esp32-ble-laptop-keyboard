@@ -7,7 +7,8 @@ python3 python3-pip build-essential mc git curl wget \
 && mkdir -p /home/pio/.platformio \
 && chown pio:pio /home/pio/.platformio
 
-RUN pip3 install -U platformio
+COPY requirements-build.txt /tmp/requirements-build.txt
+RUN pip3 install --no-cache-dir -r /tmp/requirements-build.txt
 
 USER 1000:1000
 

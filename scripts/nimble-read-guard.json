@@ -1,0 +1,10 @@
+{
+  "src/NimBLELocalValueAttribute.h": {
+    "before": "75389e7042057091de427a8f3f2047298575f6a1a0450efad7ca19234e704ee3",
+    "after": "6c89ef4c924e659831de148e4360b045b326a0616ad2bfc337a62559bcd04f01"
+  },
+  "src/NimBLEServer.cpp": {
+    "before": "af4335cf6b9e5ca3be63770307736fe50d29b53529c0dd3579f7ed515b553895",
+    "after": "586f36d1184e25612e605a4b7a6f73f6178db6c5a9c917dd4af2217b07610be0"
+  }
+}

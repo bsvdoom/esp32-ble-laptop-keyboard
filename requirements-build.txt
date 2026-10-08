@@ -1,0 +1,2 @@
+# Reconstructed baseline build tool; install in an isolated Python environment.
+platformio==6.2.0

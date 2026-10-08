@@ -12,7 +12,7 @@ licenceli át. [MIT szöveg és azonosító](https://opensource.org/license/mit)
 | NimBLE-Arduino | 2.5.1, `5ae2c43f62c5a588a25c1de68f7d17b6f3b75adb` | Apache-2.0; LICENSE és NOTICE az upstream Git-objektummal byteazonos |
 | Vendorizált Apache Mynewt NimBLE | ugyanebben a commitban `src/nimble` | Apache-2.0, saját NOTICE, Apache/Espressif/Runtime attribúció |
 | TinyCrypt | ugyanebben a commitban `src/nimble/ext/tinycrypt` | háromfeltételes BSD szöveg, Intel copyright; eredeti LICENSE megőrizve |
-| CD74HC4067 | 1.0.2, gitlink `aa6959c25a9ad7160fd515f73d8727aa86fc1ffd` | **ellentmondás:** gyökér LICENSE MIT, `src/CD74HC4067.{h,cpp}:4` LGPL 3.0; nem választottunk helyette egy licencet |
+| CD74HC4067 | 1.0.2, gitlink `aa6959c25a9ad7160fd515f73d8727aa86fc1ffd` | Gyökér `LICENSE` MIT (`src/CD74HC4067.{h,cpp}:4` fejlécben LGPL-3.0 megjegyzéssel) |
 | Arduino-ESP32 | 2.0.17; PIO `3.20017.241212+sha.dcc1105b` | vegyes: `cores/esp32/Arduino.h` LGPL-2.1-or-later, HAL-fájlok pl. ADC Apache-2.0, libb64 saját public-domain dedication |
 | ESP-IDF / SDK | Arduino csomagba épített 4.4.7 | pl. ADC driver Apache-2.0, FreeRTOS V10.4.3 fejléc MIT; további SDK/runtime összetevők külön feltételekkel |
 | Buildeszközök | Core6.2.0, espressif32 6.13.0, RISC-V8.4.0+2021r2-patch5, esptool4.11.0, SCons4.11.1 | külön upstream csomagok, nem a projekt MIT-licencének részei; ez nem teljes firmware/runtime licencjegyzék |
@@ -48,19 +48,8 @@ megtartása; ezek a patch-elosztásban együtt kezelendők, nem csak a root MIT.
 
 ## Történeti scope, amelyre nem adunk új MIT-engedélyt
 
-- `platformio_upload.py`: inaktív ElegantOTA segéd, az eredeti Git blob
-  `b22e8d5da12d5ce89d77ad6e3879b35291268185`, bevezető commit
-  `b535cadce7de00cb7c6c63b91eb44d62be76a321`. Nincs saját licencfejléce;
-  ElegantOTA-eredetére a kód/fejléc utal. A helyi3.1.7 uploaderrel hasonló,
-  de nem byteazonos; ennek AGPL-3.0 licence **nem bizonyítja a régi példány
-  pontos licencét**. A korábbi416b7f… upstream/3.1.0 script-objektumhoz nem
-  jutottunk hozzá. Pontos eredeti verzió+engedély tisztázandó, vagy a fájl
-  külön későbbi döntéssel a publikálási scope-ból kivezetendő. Most megőrzött,
-  nem aktív buildhook, nem firmware-függőség. [Upstream](https://github.com/ayushsharma82/ElegantOTA).
-- `src/certs.h`: inaktív, történeti nyilvános TLS-tanúsítványok és PUBLIC KEY;
-  nem PRIVATE KEY, nem credential. Nem saját MIT-kód; provenance a fájl
-  nyilvános issuer/URL megjegyzése, redistribution/provenance külön review-ra
-  marad, a firmware nem használja. Nem töröltük.
+- `platformio_upload.py`: a régi, inaktív ElegantOTA segédscript eltávolításra
+  került a munkafából (nem volt aktív buildhook vagy firmware-függőség).
 - Régi HUN fork: nincs aktív forrás/gitlink/patch az új buildben. A magyar
   fizikai mátrix és a tesztorákulum numerikus HID usage adatok; az adapter
   önálló implementáció, nem a HUN ASCII decoder/descriptor másolata.
@@ -72,8 +61,7 @@ megtartása; ezek a patch-elosztásban együtt kezelendők, nem csak a root MIT.
 
 A saját MIT-forrás nem jelenti, hogy a teljes firmware.bin kizárólag MIT.
 Bináris kiadás előtt az Arduino LGPL és egyéb belinkelt SDK/runtime-részek
-forrás-/újralinkelési és értesítési kötelezettségeit, valamint a CD licenceltérését
-külön rendezni kell. Az itt megőrzött NimBLE-notice csomag sem a teljes SDK
-licencauditja. Nincs automatikus bináris release vagy teljes bináris
-terjeszthetőségi nyilatkozat. A konkrét fennmaradó forrásscope-akadályok és
-a publikálási döntés a [PUBLICATION_AUDIT.md](PUBLICATION_AUDIT.md) dokumentumban.
+forrás-/újralinkelési és értesítési kötelezettségeit külön rendezni kell.
+Az itt megőrzött NimBLE-notice csomag sem a teljes SDK licencauditja.
+Nincs automatikus bináris release vagy teljes bináris terjeszthetőségi
+nyilatkozat. További részletek a [README](README.md#licencek) dokumentumban.

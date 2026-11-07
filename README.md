@@ -98,13 +98,10 @@ python3 -m venv /tmp/keyboard-build-venv
 | Összetevő | Rögzítés |
 | --- | --- |
 | PlatformIO Core |6.2.0, requirements-build.txt |
-| Platform |espressif32@6.13.0 |
-| Framework |Arduino2.0.17 / IDF4.4.7,3.20017.241212+sha.dcc1105b |
+| Platform |pioarduino `platform-espressif32` 55.03.311 (`releases/download/55.03.311/platform-espressif32.zip`) |
+| Framework |Arduino 3.3.11 / ESP-IDF 5.5.5 (visszafelé kompatibilis IDF 4.4 / Arduino 2.0.17 ADC fallbackkel) |
 | NimBLE |2.5.1, commit5ae2c43f62c5a588a25c1de68f7d17b6f3b75adb |
 | CD74HC4067 |gitlinkaa6959c25a9ad7160fd515f73d8727aa86fc1ffd, metadata1.0.2 |
-
-További pontos pinek a `platformio.ini`-ben: RISC-V8.4.0+2021r2-patch5,
-esptool package2.41100.0 (API4.11.0), SCons4.41101.0 (4.11.1).
 A Python tranzitív csomagokhoz nincs teljes hermetikus lock; a reprodukálhatóság
 ugyanebből a deklarált forrásból kézi pótlás nélkül sikeres buildet jelent,
 nem bitazonos image-et (UTC, Git-státusz és fordítási útvonalak eltérhetnek).
@@ -142,12 +139,14 @@ akku+ ── R_top ── ADC csomópont ── R_bottom ── közös GND
                ellenőrzött ADC1 GPIO
 ```
 
-**Alapból kikapcsolt**: `include/BatteryAdcConfig.h`, `enabled=false`.
-A `cells=1` a soros cellaszám; párhuzamos mező nem szükséges a feszültségmodellhez.
-Az Rt/Rb/tolerancia, tényleges ADC-bekötés, maximális fizikai packfeszültség és
-plausibility alsó határ továbbra ismeretlen. A modell4200-as végpontja nem
-helyettesíti a töltő toleranciával növelt fizikai maximumát. A hiányzó
-mezők0/−1/UNKNOWN értékkel megakadályozzák a mérés engedélyezését.
+**Konfigurálva és engedélyezve (`include/BatteryAdcConfig.h`, `enabled=true`):**
+`gpio=0` (ADC1), `attenuation=3` (12 dB, 2500 mV méréshatár),
+`rTopOhm=320000` (320 kΩ, akku+ → ADC), `rBottomOhm=220000` (220 kΩ, ADC → GND),
+`resistorTolerancePermille=10` (1%), `cells=1`, `maxBatteryMv=4250`,
+`emptyCellMv=3200`, `fullCellMv=4200`, `minPlausibleCellMv=2800`.
+A 320k:220k osztóval 4200 mV → ~1711 mV ADC jel (4250 mV → ~1731 mV,
+1%-os legrosszabb toleranciával ~1752 mV < 2250 mV 10%-os tartalékhatár;
+osztóáram ~7,8 µA).
 
 Konfigurációs mezők: `gpio`, IDF `attenuation` index0/1/2/3; `rTopOhm` és
 `rBottomOhm`; `cells`, `maxBatteryMv`; `emptyCellMv`, `fullCellMv`,

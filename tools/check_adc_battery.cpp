@@ -1,12 +1,22 @@
-#define KEYBOARD_ADC_TEST_CONFIGURATION
 #include "BatteryAdcConfig.h"
+namespace testAdcConfig {
+#define KEYBOARD_ADC_TEST_CONFIGURATION
+#include "../tools/adc_test_configuration.h"
+}
 #include <cassert>
 #include <cstdio>
 #include <initializer_list>
 
 int main() {
   using namespace batteryAdc;
-  const Config c = batteryAdcConfig::configuration();
+  assert(batteryAdcConfig::enabled);
+  const Config prod = batteryAdcConfig::configuration();
+  assert(validConfig(prod));
+  assert(prod.rTopOhm == 320000 && prod.rBottomOhm == 220000);
+  uint32_t prodMv = 0; uint8_t prodPct = 0;
+  assert(batteryMillivolts(prod, 1507, prodMv) && prodMv == 3699);
+  assert(voltagePercent(prod, prodMv, prodPct) && prodPct == 50);
+  const Config c = testAdcConfig::batteryAdcConfig::configuration();
   assert(validConfig(c));
   assert(keyboardPins::freeAdc1(0));
   for (int pin = 1; pin <= 5; ++pin) { auto bad = c; bad.gpio = pin; assert(!validConfig(bad)); }

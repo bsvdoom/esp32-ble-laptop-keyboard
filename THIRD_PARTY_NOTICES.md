@@ -13,9 +13,9 @@ licenceli át. [MIT szöveg és azonosító](https://opensource.org/license/mit)
 | Vendorizált Apache Mynewt NimBLE | ugyanebben a commitban `src/nimble` | Apache-2.0, saját NOTICE, Apache/Espressif/Runtime attribúció |
 | TinyCrypt | ugyanebben a commitban `src/nimble/ext/tinycrypt` | háromfeltételes BSD szöveg, Intel copyright; eredeti LICENSE megőrizve |
 | CD74HC4067 | 1.0.2, gitlink `aa6959c25a9ad7160fd515f73d8727aa86fc1ffd` | Gyökér `LICENSE` MIT (`src/CD74HC4067.{h,cpp}:4` fejlécben LGPL-3.0 megjegyzéssel) |
-| Arduino-ESP32 | 2.0.17; PIO `3.20017.241212+sha.dcc1105b` | vegyes: `cores/esp32/Arduino.h` LGPL-2.1-or-later, HAL-fájlok pl. ADC Apache-2.0, libb64 saját public-domain dedication |
-| ESP-IDF / SDK | Arduino csomagba épített 4.4.7 | pl. ADC driver Apache-2.0, FreeRTOS V10.4.3 fejléc MIT; további SDK/runtime összetevők külön feltételekkel |
-| Buildeszközök | Core6.2.0, espressif32 6.13.0, RISC-V8.4.0+2021r2-patch5, esptool4.11.0, SCons4.11.1 | külön upstream csomagok, nem a projekt MIT-licencének részei; ez nem teljes firmware/runtime licencjegyzék |
+| Arduino-ESP32 | pioarduino 55.03.311 (Arduino 3.3.11; kompatibilis 2.0.17-tel is) | vegyes: `cores/esp32/Arduino.h` LGPL-2.1-or-later, HAL-fájlok pl. ADC Apache-2.0, libb64 saját public-domain dedication |
+| ESP-IDF / SDK | Arduino csomagba épített 5.5.5 (kompatibilis 4.4.7-tel is) | pl. ADC driver Apache-2.0, FreeRTOS fejléc MIT; további SDK/runtime összetevők külön feltételekkel |
+| Buildeszközök | Core 6.2.0, pioarduino `platform-espressif32` 55.03.311, RISC-V 14.2.0, esptool 5.3.0, SCons 4.8.1 | külön upstream csomagok, nem a projekt MIT-licencének részei; ez nem teljes firmware/runtime licencjegyzék |
 
 Elsődleges, verzióhoz kötött források:
 [NimBLE LICENSE](https://github.com/h2zero/NimBLE-Arduino/blob/5ae2c43f62c5a588a25c1de68f7d17b6f3b75adb/LICENSE),

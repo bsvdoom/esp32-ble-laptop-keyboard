@@ -2,7 +2,9 @@
 #include <NimBLEDevice.h>
 #include <NimBLEHIDDevice.h>
 #include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
 #include "KeyboardReport.h"
+#include "OtaSession.h"
 #include "KeyboardLink.h"
 #include "BatteryState.h"
 
@@ -21,8 +23,24 @@ public:
   // One loop-owned attempt, checked against the caller's session before/after notify.
   // Result describes the local API, never host receipt. No retry inside the adapter.
   SendResult submitReport(const KeyboardReport& report, uint64_t expectedGeneration);
+  // Simple BLE OTA (kodira/simple-ble-ota compatible). Snapshot for loop/diagnostics.
+  keyboardble::OtaStatus otaStatus();
+  // Loop-only: performs the deferred reboot ~250 ms after a verified COMPLETE,
+  // so the write response leaves the stack before esp_restart().
+  void pollOta();
 
 private:
+  // OTA state is shared between the NimBLE host task and loop. A mutex (not the
+  // linkMux_ spinlock) because esp_ota_* flash work runs while it is held.
+  StaticSemaphore_t otaMutexStorage_;
+  SemaphoreHandle_t otaMutex_ = nullptr;
+  keyboardble::OtaSession otaSession_;
+  NimBLECharacteristic* otaControl_ = nullptr;
+  NimBLECharacteristic* otaData_ = nullptr;
+  bool rebootPending_ = false;
+  int64_t rebootAtUs_ = 0;
+  void onOtaWrite(NimBLECharacteristic*, NimBLEConnInfo&, bool control);
+
   portMUX_TYPE linkMux_ = portMUX_INITIALIZER_UNLOCKED;
   KeyboardLinkState link_;
   KeyboardReport report_;

@@ -1,6 +1,7 @@
 #include "Diagnostics.h"
 #include "KeyboardBuildInfo.h"
 #include <Arduino.h>
+#include <esp_ota_ops.h>
 #include <esp_system.h>
 #include <esp_timer.h>
 #include <freertos/FreeRTOS.h>
@@ -35,6 +36,7 @@ uint64_t lastLoop = 0, maxLoop = 0, lastScan = 0, maxScan = 0;
 uint32_t scans = 0, logDrop = 0, stableEdges = 0, reportChanges = 0;
 uint64_t lastHeartbeat = 0;
 KeyboardSession::Metrics sessionMetrics; // Loop-owned; no callback reads/writes.
+keyboardble::OtaStatus otaSnapshot; // Loop-owned copy taken under the OTA mutex.
 
 void increment(uint32_t& value) { if (value != UINT32_MAX) ++value; }
 
@@ -86,6 +88,23 @@ const char* resetName(esp_reset_reason_t reason) {
     default: return "unknown";
   }
 }
+
+const char* otaStateName(keyboardble::OtaState state) {
+  switch (state) {
+    case keyboardble::OtaState::Idle: return "idle";
+    case keyboardble::OtaState::Receiving: return "receiving";
+    case keyboardble::OtaState::RebootPending: return "reboot_pending";
+  }
+  return "unknown";
+}
+
+void emitOta(uint64_t now) {
+  const auto& o = otaSnapshot;
+  emit("OTA t_ms=%" PRIu64 " state=%s rx=%" PRIu32 "/%" PRIu32 " last_error=0x%02X sessions=%" PRIu32
+       " failures=%" PRIu32 "\n",
+       now, otaStateName(o.state), o.receivedBytes, o.totalBytes,
+       static_cast<unsigned>(o.lastError), o.sessions, o.failures);
+}
 }
 
 namespace diagnostics {
@@ -94,6 +113,18 @@ void begin() {
   emit("BOOT id=%s built_utc=%s reset=%d/%s idf=%s\n",
        KEYBOARD_BUILD_ID, KEYBOARD_BUILD_UTC, static_cast<int>(reason),
        resetName(reason), esp_get_idf_version());
+  const esp_partition_t* running = esp_ota_get_running_partition();
+  const esp_partition_t* next = esp_ota_get_next_update_partition(nullptr);
+  emit("OTA_PARTITION running=%s next=%s next_size=%" PRIu32 "\n",
+       running ? running->label : "?", next ? next->label : "?",
+       next ? static_cast<uint32_t>(next->size) : 0u);
+}
+
+void ota(const keyboardble::OtaStatus& status) {
+  const bool changed = status.state != otaSnapshot.state || status.lastError != otaSnapshot.lastError ||
+                       status.sessions != otaSnapshot.sessions || status.failures != otaSnapshot.failures;
+  otaSnapshot = status;
+  if (changed) emitOta(esp_timer_get_time() / 1000);
 }
 
 void loopDuration(uint64_t duration) {
@@ -138,21 +169,23 @@ void poll() {
   snapshot = counters;
   portEXIT_CRITICAL(&diagnosticMux);
   emit("HB t_ms=%" PRIu64 " link_obs=%u loop_us=%" PRIu64 " loop_max_us=%" PRIu64
-       " scan_us=%" PRIu64 " scan_max_us=%" PRIu64 " scans=%u stable_edges=%u physical_report_changes=%u"
-       " heap=%u heap_min=%u ev_drop=%u log_drop=%u\n",
+       " scan_us=%" PRIu64 " scan_max_us=%" PRIu64 " scans=%" PRIu32 " stable_edges=%" PRIu32 " physical_report_changes=%" PRIu32
+       " heap=%" PRIu32 " heap_min=%" PRIu32 " ev_drop=%" PRIu32 " log_drop=%" PRIu32 "\n",
        now, snapshot.linkObserved, lastLoop, maxLoop, lastScan, maxScan, scans, stableEdges, reportChanges,
-       esp_get_free_heap_size(), esp_get_minimum_free_heap_size(), snapshot.eventDrop, logDrop);
-  emit("TX t_ms=%" PRIu64 " notify_attempts=%u skipped_disconnected=%u skipped_not_ready=%u"
-       " api_accepted=%u api_rejected=%u status_ok=%u status_error=%u last_status_code=%d\n",
+       static_cast<uint32_t>(esp_get_free_heap_size()), static_cast<uint32_t>(esp_get_minimum_free_heap_size()),
+       snapshot.eventDrop, logDrop);
+  emit("TX t_ms=%" PRIu64 " notify_attempts=%" PRIu32 " skipped_disconnected=%" PRIu32 " skipped_not_ready=%" PRIu32
+       " api_accepted=%" PRIu32 " api_rejected=%" PRIu32 " status_ok=%" PRIu32 " status_error=%" PRIu32 " last_status_code=%d\n",
        now, snapshot.calls, snapshot.skipped, snapshot.notReady, snapshot.apiAccepted,
        snapshot.apiRejected, snapshot.statusOk, snapshot.statusError, snapshot.lastCode);
   const auto& m = sessionMetrics;
   emit("SESSION gen=%" PRIu64 " gap=%u enc=%u auth=%u bond=%u sub=%u ready=%u"
-       " suppressed=%u pending=%u sync=%u local_valid=%u wanted_changes=%u"
-       " attempts=%u retries=%u rejected=%u overflow=%u discarded=%u stale=%u\n",
+       " suppressed=%u pending=%u sync=%u local_valid=%u wanted_changes=%" PRIu32
+       " attempts=%" PRIu32 " retries=%" PRIu32 " rejected=%" PRIu32 " overflow=%" PRIu32 " discarded=%" PRIu32 " stale=%" PRIu32 "\n",
        m.link.generation, m.link.connected, m.link.encrypted, m.link.authenticated, m.link.bonded,
        m.link.subscribed, m.link.ready(), m.suppressed, m.pending, m.initialEmpty, m.localValid,
        m.wantedChanges, m.attempts, m.retries, m.rejected, m.overflows, m.discarded, m.stale);
+  emitOta(now);
 }
 }
 

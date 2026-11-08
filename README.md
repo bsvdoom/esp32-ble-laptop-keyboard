@@ -1,7 +1,7 @@
 # ESP32-C3 BLE laptopbillentyűzet
 
 Régi laptop 8×18 mátrixa két CD74HC4067 multiplexerrel, ESP-C3-12F modulon.
-Rekonstruált, OTA nélküli projektbeli HID-adapter Arduino2.0.17 / IDF4.4.7 és
+Rekonstruált, BLE GATT OTA-val bővített projektbeli HID-adapter Arduino2.0.17 / IDF4.4.7 és
 NimBLE-Arduino2.5.1 fölött. Nem az eredeti hardverfirmware reprodukciója.
 Nincs Wi-Fi, `secret.h`, webes függőség vagy karbantartási mód.
 
@@ -121,7 +121,7 @@ NimBLE byteállapot. [PIO dependency pinning](https://docs.platformio.org/en/lat
 Az esp32-c3-devkitm-1 **fordítási preset**, nem az ESP-C3-12F fizikai azonossága.
 CPU160MHz, flash-beállítás2MB/QIO/80MHz és custom.csv örökölt, hardveren nem
 ellenőrzött; az image DIO fejléce és preset külön adat. A valódi kapacitást
-nem bizonyítja a build. App0 limit1027200 byte. A CI csak recursive checkout,
+nem bizonyítja a build. App0 limit 1048576 byte. A CI csak recursive checkout,
 pinned Core és C3 build; nem futtat hardvertesztet vagy bináris release-t.
 
 ## Opcionális LiPo1S2P akkumulátor
@@ -141,12 +141,11 @@ akku+ ── R_top ── ADC csomópont ── R_bottom ── közös GND
 
 **Konfigurálva és engedélyezve (`include/BatteryAdcConfig.h`, `enabled=true`):**
 `gpio=0` (ADC1), `attenuation=3` (12 dB, 2500 mV méréshatár),
-`rTopOhm=320000` (320 kΩ, akku+ → ADC), `rBottomOhm=220000` (220 kΩ, ADC → GND),
+`rTopOhm=672000` (672 kΩ, akku+ → ADC), `rBottomOhm=100000` (100 kΩ, ADC → GND, mért ~7,72x osztási arány),
 `resistorTolerancePermille=10` (1%), `cells=1`, `maxBatteryMv=4250`,
 `emptyCellMv=3200`, `fullCellMv=4200`, `minPlausibleCellMv=2800`.
-A 320k:220k osztóval 4200 mV → ~1711 mV ADC jel (4250 mV → ~1731 mV,
-1%-os legrosszabb toleranciával ~1752 mV < 2250 mV 10%-os tartalékhatár;
-osztóáram ~7,8 µA).
+A mért 672k:100k osztóval 3930 mV → ~509 mV ADC jel (0,46–0,51 V a GPIO0 lábon;
+4200 mV → ~544 mV, 4250 mV → ~550 mV < 2250 mV tartalékhatár).
 
 Konfigurációs mezők: `gpio`, IDF `attenuation` index0/1/2/3; `rTopOhm` és
 `rBottomOhm`; `cells`, `maxBatteryMv`; `emptyCellMv`, `fullCellMv`,
@@ -225,9 +224,35 @@ review kell. Nincs automatikus erase/bondtörlő/migrációs projektpolicy.
 A posthook az initializer alap E000 offsetjét a custom.csv otadata-jához
 **D000**-ra igazítja. Offline ellenőrzött terv: bootloader.bin@0000,
 partitions.bin@8000, boot_app0.bin@D000, firmware.bin@10000. Megmaradtak az
-OTA-slotok, OTA runtime nincs. A régi layoutot ez nem bizonyítja; csak az adott
+OTA-slotok; a runtime OTA BLE GATT-on érhető el (lásd: BLE OTA). A régi layoutot ez nem bizonyítja; csak az adott
 build hash/határ/erase/ELF-egyezéses terve. A részletes feltételes első-írási és
 visszaállítási terv alább található. Nem történt portnyitás vagy feltöltés.
+
+## BLE OTA
+
+kodira/simple-ble-ota kompatibilis firmware-frissítés BLE GATT-on, ugyanazzal a
+protokollal és klienssel, mint az esp32-ble-laptop-touchpad projekt.
+
+- Service `487d0950-41b9-4c57-ad09-a46ac47e2150`; Control `…2151`
+  (WRITE/WRITE_ENC/NOTIFY: `01`+méret START, `02`+CRC32 COMPLETE, `03` ABORT,
+  hiba: notify `FF kód`), Data `…2152` (WRITE/WRITE_NR/WRITE_ENC, nyers darabok).
+- Csak titkosított, bondolt, 16 bájtos kulcsú link írhat; más írás hibát ad és
+  megszakítja a futó sessiont. Kapcsolatbontáskor `esp_ota_abort`, a régi image marad.
+- Sikeres COMPLETE után boot partíció váltás, ~250 ms múlva a loop újraindít.
+- A cél a következő OTA slot: app0-ból futva az app1 (0xD0000 = 832 KiB) a felső
+  határ, tehát a `firmware.bin` ennél nem lehet nagyobb.
+- Soros log: `OTA_PARTITION running=… next=…` bootkor, `OTA state=… rx=…/… last_error=…`
+  állapotváltáskor és heartbeatenként.
+
+Használat (a hoston előbb párosítani/bondolni kell, különben `0x03` hiba):
+
+```sh
+pip install bleak
+./scripts/simple-ble-ota-client.py [.pio/build/esp32c3/firmware.bin] ["ESP32 Keyboard" | MAC]
+```
+
+`CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1` miatt a feltöltés csak arról a hostról megy,
+amelyhez a billentyűzet éppen csatlakozik (vagy szabad, hirdető állapotban).
 
 ## Későbbi hardveres ellenőrzés sorrendje
 
@@ -278,6 +303,7 @@ ASAN_OPTIONS=detect_leaks=0 /tmp/keyboard-check-adc
 | tools/check_session.cpp | src/KeyboardSession.cpp és src/KeyboardState.cpp |
 | tools/check_battery.cpp | src/BatteryState.cpp |
 | tools/check_adc_battery.cpp | src/BatteryAdcMath.cpp |
+| tools/check_ota.cpp | src/OtaSession.cpp |
 
 Az ASan/UBSan aktív volt; LeakSanitizer a környezet ptrace-korlátja miatt
 kikapcsolt. Ne futtasd újra a teljes sort pusztán dokumentációs változás miatt.
@@ -298,7 +324,7 @@ A `custom.csv` buildben feloldott tartományai (vég kizáró):
 | NVS |[0x9000,0xD000) |
 | otadata |[0xD000,0xF000) |
 | phy_init |[0xF000,0x10000) |
-| app0 |[0x10000,0x10AC80),1027200byte |
+| app0 |[0x10000,0x110000),1048576byte |
 | app1 |[0x110000,0x1E0000) |
 
 A framework8192byte-os boot_app0 két teljes otadata szektort inicializál,

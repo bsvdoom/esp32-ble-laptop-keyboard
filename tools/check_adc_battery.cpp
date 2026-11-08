@@ -12,9 +12,9 @@ int main() {
   assert(batteryAdcConfig::enabled);
   const Config prod = batteryAdcConfig::configuration();
   assert(validConfig(prod));
-  assert(prod.rTopOhm == 320000 && prod.rBottomOhm == 220000);
+  assert(prod.rTopOhm == 672000 && prod.rBottomOhm == 100000);
   uint32_t prodMv = 0; uint8_t prodPct = 0;
-  assert(batteryMillivolts(prod, 1507, prodMv) && prodMv == 3699);
+  assert(batteryMillivolts(prod, 479, prodMv) && prodMv == 3698);
   assert(voltagePercent(prod, prodMv, prodPct) && prodPct == 50);
   const Config c = testAdcConfig::batteryAdcConfig::configuration();
   assert(validConfig(c));

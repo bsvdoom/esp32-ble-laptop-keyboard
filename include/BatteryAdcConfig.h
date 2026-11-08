@@ -11,8 +11,8 @@ inline batteryAdc::Config configuration() {
   batteryAdc::Config c;
   c.gpio = 0; // GPIO0 is the sole code-free ADC1 channel on this pinout.
   c.attenuation = 3; // IDF indices: 0=0dB, 1=2.5dB, 2=6dB, 3=12dB (2500mV range).
-  c.rTopOhm = 320000;    // Battery+ -> ADC node (320 kOhm).
-  c.rBottomOhm = 220000; // ADC node -> common GND (220 kOhm).
+  c.rTopOhm = 672000;    // Measured hardware divider: 3930mV bat -> 509mV ADC.
+  c.rBottomOhm = 100000; // Ratio ~7.72x (0.46V-0.51V measured on GPIO0).
   c.cells = 1; // User-confirmed LiPo 1S2P; parallel=2 does not change voltage.
   c.maxBatteryMv = 4250; // Maximum PACK voltage, including charger tolerances.
   c.emptyCellMv = 3200; // User voltage model only; no cutoff/protection policy.

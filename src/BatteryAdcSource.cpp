@@ -97,5 +97,9 @@ void BatteryAdcSource::poll(uint32_t nowMs) {
   if (result != batteryAdc::Filter::Result::Pending) {
     burst_ = false;
     status_ = result == batteryAdc::Filter::Result::Valid ? Status::Ready : Status::InvalidSample;
+    const auto sample = filter_.cachedSample();
+    Serial.printf("BATTERY_BURST res=%d raw=%d adc_mv=%" PRIu32 " bat_mv=%" PRIu32 " status=%u valid=%d pct=%d\n",
+                  static_cast<int>(result), raw, mv, filter_.batteryMv(),
+                  static_cast<unsigned>(status_), sample.valid, sample.percent);
   }
 }

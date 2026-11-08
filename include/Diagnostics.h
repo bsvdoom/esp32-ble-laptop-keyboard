@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include "KeyboardSession.h"
+#include "OtaSession.h"
 
 namespace diagnostics {
 void begin();
@@ -10,6 +11,8 @@ void scanDuration(uint64_t microseconds);
 // Loop-owned physical/report counters; no key values are logged.
 void scanProcessed(uint16_t stableChanges, bool reportChanged);
 void session(const KeyboardSession::Metrics&);
+// Loop-owned OTA snapshot; logged on state/error change and with each heartbeat.
+void ota(const keyboardble::OtaStatus&);
 // Scalar observations only. Callback-safe, bounded queue, no Serial writes here.
 void stackInit(bool ok);
 void advertisingStart(bool ok);

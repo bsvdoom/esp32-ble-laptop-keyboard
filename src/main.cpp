@@ -120,6 +120,10 @@ void setup() {
     const bool ready = adcBattery->begin();
     Serial.printf("BATTERY_ADC init=%d status=%u calibration=efuse_TP_required fallback=none\n",
                   ready, static_cast<unsigned>(adcBattery->status()));
+    for (int i = 0; i < 4; ++i) {
+      adcBattery->poll(static_cast<uint32_t>(millis()));
+      delay(30);
+    }
   }
   delay(100);
   // #ifdef BLE
@@ -145,6 +149,10 @@ void loop() {
   diagnostics::scanDuration(esp_timer_get_time() - scanStart);
   if (batteryAdcConfig::enabled) adcBattery->poll(static_cast<uint32_t>(millis()));
   bleKeyboard.pollBattery(static_cast<uint32_t>(millis())); // Keyboard always has priority.
+  // OTA writes run in the NimBLE task; nothing here is timing-critical, so the scan
+  // keeps running during an upload. Loop only logs status and does the deferred reboot.
+  diagnostics::ota(bleKeyboard.otaStatus());
+  bleKeyboard.pollOta();
   delay(10); // Preserve cooperative scheduling; scan continues even without a connection.
   diagnostics::poll();
   diagnostics::loopDuration(esp_timer_get_time() - loopStart);

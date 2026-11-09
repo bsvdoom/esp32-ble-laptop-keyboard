@@ -134,24 +134,25 @@ void setup() {
 
 void loop() {
   const int64_t loopStart = esp_timer_get_time();
-  const int64_t scanStart = esp_timer_get_time();
-  sampleMatrix(rawSamples);
-  const auto scan = keyboardState.processScan(rawSamples, static_cast<uint32_t>(millis()), keyMatrix);
-  diagnostics::scanProcessed(scan.stableChanges, scan.reportChanged);
-  const uint32_t nowMs = static_cast<uint32_t>(millis());
-  keyboardSession.update(bleKeyboard.prepareSession(), keyboardState, keyMatrix, nowMs);
-  KeyboardSession::Request request;
-  if (keyboardSession.nextAttempt(nowMs, request)) {
-    const auto result = bleKeyboard.submitReport(request.report, request.generation);
-    keyboardSession.complete(request, result, bleKeyboard.linkSnapshot());
+  const auto ota = bleKeyboard.otaStatus();
+  if (!ota.active()) {
+    const int64_t scanStart = esp_timer_get_time();
+    sampleMatrix(rawSamples);
+    const auto scan = keyboardState.processScan(rawSamples, static_cast<uint32_t>(millis()), keyMatrix);
+    diagnostics::scanProcessed(scan.stableChanges, scan.reportChanged);
+    const uint32_t nowMs = static_cast<uint32_t>(millis());
+    keyboardSession.update(bleKeyboard.prepareSession(), keyboardState, keyMatrix, nowMs);
+    KeyboardSession::Request request;
+    if (keyboardSession.nextAttempt(nowMs, request)) {
+      const auto result = bleKeyboard.submitReport(request.report, request.generation);
+      keyboardSession.complete(request, result, bleKeyboard.linkSnapshot());
+    }
+    diagnostics::session(keyboardSession.metrics());
+    diagnostics::scanDuration(esp_timer_get_time() - scanStart);
+    if (batteryAdcConfig::enabled) adcBattery->poll(static_cast<uint32_t>(millis()));
+    bleKeyboard.pollBattery(static_cast<uint32_t>(millis())); // Keyboard always has priority.
   }
-  diagnostics::session(keyboardSession.metrics());
-  diagnostics::scanDuration(esp_timer_get_time() - scanStart);
-  if (batteryAdcConfig::enabled) adcBattery->poll(static_cast<uint32_t>(millis()));
-  bleKeyboard.pollBattery(static_cast<uint32_t>(millis())); // Keyboard always has priority.
-  // OTA writes run in the NimBLE task; nothing here is timing-critical, so the scan
-  // keeps running during an upload. Loop only logs status and does the deferred reboot.
-  diagnostics::ota(bleKeyboard.otaStatus());
+  diagnostics::ota(ota);
   bleKeyboard.pollOta();
   delay(10); // Preserve cooperative scheduling; scan continues even without a connection.
   diagnostics::poll();

@@ -16,6 +16,7 @@ Requirements:
 """
 
 import asyncio
+import os
 import subprocess
 import sys
 import time
@@ -24,7 +25,11 @@ from pathlib import Path
 
 try:
     from bleak import BleakClient, BleakScanner
+    from bleak.backends.device import BLEDevice
 except ImportError:
+    venv_py = Path("/home/adam/Projects/esp32-bt-adapter/.venv-ble/bin/python")
+    if venv_py.is_file() and Path(sys.prefix) != venv_py.parent.parent:
+        os.execv(str(venv_py), [str(venv_py), *sys.argv])
     print("Missing dependency: bleak (install with: pip install bleak)")
     sys.exit(1)
 
@@ -108,7 +113,9 @@ class SimpleOtaClient:
             raise RuntimeError(f"Device '{target}' not found within {timeout:.0f}s")
 
         print(f"Connecting to {address}...")
-        self.client = BleakClient(address)
+        dev_path = f"/org/bluez/hci0/dev_{address.replace(':', '_')}"
+        device = BLEDevice(address, target, {"path": dev_path, "props": {}})
+        self.client = BleakClient(device, bluez={"adapter": "hci0"})
         await self.client.connect()
         self.is_connected = True
         print("Connected.")

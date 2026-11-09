@@ -192,7 +192,7 @@ int KeyboardHid::batteryReadGuard(NimBLEConnInfo& info, void* arg) {
 }
 
 void KeyboardHid::pollBattery(uint32_t nowMs) {
-  if (!batterySource_) return;
+  if (!batterySource_ || otaStatus().active()) return;
   if (static_cast<uint32_t>(nowMs - lastBatteryPoll_) >= batteryConfig::pollMs) {
     const BatterySample sample = batterySource_->cachedSample();
     portENTER_CRITICAL(&linkMux_);
